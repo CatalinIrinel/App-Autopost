@@ -1,10 +1,15 @@
-import { Flex, Heading } from '@chakra-ui/react';
+import { Flex, Heading, Stack } from '@chakra-ui/react';
 import React from 'react';
 const Facebook = () => {
   return (
-    <Flex w={'full'} h={'100vh'}>
+    <Stack
+      justifyContent={'center'}
+      alignItems={'center'}
+      w={'full'}
+      h={'100vh'}
+    >
       <Heading as={'h1'}> Facebook area </Heading>
-    </Flex>
+    </Stack>
   );
 };
 
