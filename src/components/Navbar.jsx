@@ -20,7 +20,7 @@ const Navbar = ({ toggle }) => {
   const signoutHandler = () => {
     ctxDispatch({ type: 'USER_SIGNOUT' });
     localStorage.removeItem('userInfo');
-    localStorage.removeItem('paymentMethod');
+    window.location.href('/logare');
   };
   return (
     <HStack
@@ -29,12 +29,17 @@ const Navbar = ({ toggle }) => {
       justifyContent={'center'}
       alignItems={'center'}
     >
-      <HStack w={'full'} maxW={'90rem'} justifyContent={'space-between'}>
+      <HStack
+        w={'full'}
+        maxW={'90rem'}
+        justifyContent={'space-between'}
+        px={{ base: '3rem', '2xl': 0 }}
+      >
         <Tooltip hasArrow label={'Menu'} placement={'bottom'}>
           <HamburgerIcon fontSize={'2rem'} onClick={toggle} />
         </Tooltip>
         <HStack>
-          {userInfo && (
+          {userInfo ? (
             <>
               <Menu>
                 <Tooltip hasArrow label={'User Menu'} placement={'bottom'}>
@@ -62,6 +67,8 @@ const Navbar = ({ toggle }) => {
                 </MenuList>
               </Menu>
             </>
+          ) : (
+            <Link to={'/logare'}>Logare</Link>
           )}
         </HStack>
       </HStack>

@@ -34,6 +34,7 @@ const Sidebar = ({ toggle, isOpen }) => {
       )}
       fontSize={'1.25rem'}
       className="sidebar"
+      overflowY={'auto'}
     >
       <Box
         w={'full'}
@@ -42,12 +43,9 @@ const Sidebar = ({ toggle, isOpen }) => {
         justifyContent={'space-between'}
       >
         <Link to="/">
-          <Image
-            width={'150px'}
-            src={'https://autopost.ro/images/LogoFinal-W.png'}
-          />
+          <Image width={'150px'} src={'/images/LogoFinal-W.png'} />
         </Link>
-        <CloseIcon onClick={toggle} />
+        <CloseIcon onClick={toggle} color={'#fff'} />
       </Box>
       <UnorderedList
         w={'full'}
@@ -69,7 +67,37 @@ const Sidebar = ({ toggle, isOpen }) => {
           <Link to="/">Acasa</Link>
         </ListItem>
       </UnorderedList>
-
+      <UnorderedList
+        m={0}
+        listStyleType={'none'}
+        display={'flex'}
+        flexDir={'column'}
+        gap={'1rem'}
+        color={'titleLight'}
+      >
+        <ListItem
+          color={useColorModeValue('titleLight', 'titleDark')}
+          fontWeight={'bold'}
+          textDecoration={'underline'}
+          fontSize={'1rem'}
+        >
+          Post on
+        </ListItem>
+        {[
+          { text: 'facebook', link: '/facebook' },
+          { text: 'instagram', link: '/instagram' },
+          { text: 'twitter', link: '/twitter' },
+          { text: 'tiktok', link: '/tiktok' },
+          { text: 'linkedIn', link: '/linkedin' },
+          { text: 'Youtube', link: '/youtube' },
+          { text: 'linkedIn', link: 'linkedin' },
+          { text: 'linkedIn', link: 'linkedin' },
+        ].map((item, index) => (
+          <ListItem textTransform={'capitalize'} key={index}>
+            <Link to={`${item.link}`}>{item.text}</Link>
+          </ListItem>
+        ))}
+      </UnorderedList>
       <UnorderedList
         m={0}
         listStyleType={'none'}
@@ -111,7 +139,7 @@ const Sidebar = ({ toggle, isOpen }) => {
           textDecoration={'underline'}
           fontSize={'1rem'}
         >
-          Statistici
+          <Link to={'/statistics'}>Statistici</Link>
         </ListItem>
         {[
           { text: 'facebook', link: 'statistics/facebook' },

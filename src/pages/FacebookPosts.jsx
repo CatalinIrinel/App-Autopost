@@ -45,7 +45,7 @@ const reducer = (state, action) => {
 
 const FacebookPosts = () => {
   const { state } = useContext(Store);
-  const { userInfo } = state;
+  const { userInfo, fbAccess, fbUserId } = state;
 
   const [{ error, loadingUpdate }, dispatch] = useReducer(reducer, {
     loading: true,
@@ -58,9 +58,6 @@ const FacebookPosts = () => {
   // facebook sdk async
   const isFbSDKInitialized = useInitFbSDK();
 
-  // App state
-  const [fbUserAccessToken, setFbUserAccessToken] = useState();
-
   // posts data
   const [postText, setPostText] = useState('');
   const [postImages, setPostImages] = useState('');
@@ -70,7 +67,6 @@ const FacebookPosts = () => {
 
   // user data
   const [name, setName] = useState();
-  const [userId, setUserId] = useState();
   const [userProfilePic, setUserProfilePic] = useState();
   const [userGroups, setUserGroups] = useState([]);
 
@@ -83,60 +79,18 @@ const FacebookPosts = () => {
   // const [pageGroups, setPageGroups] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
 
-  // login to fb
-  const logInToFB = React.useCallback(() => {
-    window.FB.login(
-      (response) => {
-        if (response.status === 'connected') {
-          setFbUserAccessToken(response.authResponse.accessToken);
-        } else {
-          throw new Error();
-        }
-      },
-      {
-        scope:
-          'pages_show_list, pages_manage_ads, pages_manage_posts, pages_manage_metadata, pages_manage_engagement, pages_read_engagement, public_profile, ads_management, publish_video, leads_retrieval,  publish_to_groups, instagram_basic, instagram_content_publish, instagram_manage_comments ',
-      }
-    );
-  }, []);
-
-  // logout of facebook
-  const logOutOfFB = React.useCallback(() => {
-    window.FB.logout(() => {
-      setFbUserAccessToken(null);
-      // setFbPageAccessToken(null);
-    });
-  }, []);
-
   // Checks if the user is logged in to Facebook
-  useEffect(() => {
-    if (isFbSDKInitialized) {
-      window.FB.getLoginStatus((response) => {
-        setFbUserAccessToken(response.authResponse?.accessToken);
-      });
-    }
-  }, [isFbSDKInitialized]);
-
-  // Fetches an access token for the pages
-  useEffect(() => {
-    if (fbUserAccessToken) {
-      window.FB.api('/me', (response) => {
-        setName(response.name);
-        setUserId(response.id); //userid for access
-      });
-    }
-  }, [fbUserAccessToken]);
 
   //Fetches users fb pages, profile picture and user groups
   useEffect(() => {
-    if (userId) {
-      window.FB.api(`/${userId}/accounts`, (response) => {
+    if (fbUserId) {
+      window.FB.api(`/${fbUserId}/accounts`, (response) => {
         if (response && !response.error) {
           setPages(response.data);
         }
       });
       window.FB.api(
-        `/${userId}/picture`,
+        `/${fbUserId}/picture`,
         {
           redirect: false,
           type: 'small',
@@ -147,36 +101,14 @@ const FacebookPosts = () => {
           }
         }
       );
-      window.FB.api(`/${userId}/groups`, (response) => {
+      window.FB.api(`/${fbUserId}/groups`, (response) => {
         if (response && !response.error) {
           setUserGroups(response.data);
         }
       });
     }
-  }, [userId]);
+  }, [fbUserId]);
 
-  console.log(pages);
-
-  // gets fb page profile picture
-  // useEffect(() => {
-  //   pages.forEach((page) => {
-  //     window.FB.api(
-  //       `/${page.id}/picture`,
-  //       {
-  //         redirect: '0',
-  //       },
-  //       (response) => {
-  //         if (response && !response.error) {
-  //           // console.log('Profile picture');
-  //           // console.log(response.data);
-  //           page.profilePicture = response.data.url;
-  //         }
-  //       }
-  //     );
-  //   });
-  // }, [pages, pagesProfilePicture]);
-  // console.log('Pages with profile picture');
-  // console.log(pages);
   // Publishes a post on the Facebook pages
 
   const sendPostToPage = React.useCallback(() => {
@@ -307,12 +239,15 @@ const FacebookPosts = () => {
 
     try {
       dispatch({ type: 'UPLOAD_REQUEST' });
-      const { data } = await axios.post('/api/upload', bodyFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          authorization: `Bearer ${userInfo.token}`,
-        },
-      });
+      const { data } = await axios.post(
+        'http://localhost:5000/api/upload',
+        bodyFormData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
       dispatch({ type: 'UPLOAD_SUCCESS' });
 
       if (forImages) {
@@ -381,230 +316,238 @@ const FacebookPosts = () => {
   };
 
   return (
-    <Stack>
-      <Heading as={'h1'}>Test Area</Heading>
+    <Stack
+      w={'full'}
+      alignItems={'center'}
+      justifyContent={'center'}
+      gap={'5rem'}
+    >
+      <Heading as={'h1'} textAlign={'center'}>
+        Posteaza pe Facebook
+      </Heading>
 
-      {!loadingUpdate && !error && fbUserAccessToken ? (
+      {!loadingUpdate && !error && fbAccess ? (
         <>
-          <Box
-            w={'fit-content'}
-            bg={'facebook.500'}
-            borderRadius={'1rem'}
-            color={'#fff'}
-            fontWeight={'bold'}
-            p={'1rem 1.5rem'}
-            onClick={logOutOfFB}
-          >
-            Deconectare Facebook
-          </Box>{' '}
-          <Stack>
-            <HStack alignItems={'flex-start'}>
-              <>
-                <Text>Bună, {name}</Text>
-                <Avatar src={userProfilePic} />
-              </>
-
-              <Divider orientation="vertical" />
-            </HStack>
-
-            <Accordion w={['500px']} allowMultiple>
-              <AccordionItem>
-                <AccordionButton>
-                  Alege pe ce pagini să postezi <AccordionIcon />
-                </AccordionButton>
-                <AccordionPanel pb={4}>
-                  <Stack alignItems={'flex-start'}>
-                    <Button
-                      variant={'ghost'}
-                      _hover={'none'}
-                      _active={'none'}
-                      onClick={addAllPages}
-                    >
-                      Selectează primele 50
-                    </Button>
-                    <Divider />
-                    <Stack gap={'1rem'} alignItems={'flex-start'}>
-                      {pages.map((page) => (
-                        <Button
-                          key={page.id}
-                          variant={'ghost'}
-                          onClick={() => {
-                            addPage(page);
-                          }}
-                        >
-                          <Avatar name={page.name} />
-                          <Text>{page.name}</Text>
-                        </Button>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
-
-            {selectedPages.length !== 0 && (
-              <HStack w={['500px']} flexWrap={'wrap'}>
-                {selectedPages.map((page) => (
-                  <Stack key={page.id}>
-                    {pagesProfilePicture.map((profile) => (
-                      <Avatar name={page.name} src={profile} />
-                    ))}
-
-                    <DeleteIcon
-                      color={'facebook.500'}
-                      onClick={() => deselectPage(page.id)}
-                    />
-                  </Stack>
-                ))}
-              </HStack>
-            )}
-
-            <>
-              <Accordion w={['500px']} allowMultiple>
-                <AccordionItem>
-                  <AccordionButton>
-                    Alege pe ce grupuri să postezi <AccordionIcon />
-                  </AccordionButton>
-                  <AccordionPanel pb={4}>
-                    <Stack alignItems={'flex-start'}>
-                      <Button
-                        variant={'ghost'}
-                        _hover={'none'}
-                        _active={'none'}
-                        onClick={addAllGroups}
-                      >
-                        Selectează primele 50
-                      </Button>
-                      <Divider />
-                      <Stack gap={'1rem'} alignItems={'flex-start'}>
-                        {userGroups.map((page) => (
-                          <Button
-                            key={page.id}
-                            variant={'ghost'}
-                            onClick={() => {
-                              addGroup(page);
-                            }}
-                          >
-                            <Avatar name={page.name} />
-                            <Text>{page.name}</Text>
-                          </Button>
-                        ))}
-                      </Stack>
-                    </Stack>
-                  </AccordionPanel>
-                </AccordionItem>
-              </Accordion>
-              {selectedGroups.length !== 0 && (
-                <HStack w={['500px']} flexWrap={'wrap'}>
-                  {selectedGroups.map((page) => (
-                    <Stack key={page.id}>
-                      <Avatar src={page.picture} />
-
-                      <DeleteIcon
-                        color={'facebook.500'}
-                        onClick={() => deselectGroup(page.id)}
-                      />
-                    </Stack>
-                  ))}
-                </HStack>
-              )}
-            </>
-
-            <form>
+          <HStack alignItems={'flex-start'} gap={'5rem'}>
+            <Stack>
               <Stack>
-                <Textarea
-                  value={postText}
-                  placeholder={'Introdu textul pentru postare'}
-                  rows={8}
-                  disabled={isPublishing}
-                  onChange={(e) => setPostText(e.target.value)}
-                />
-                <FormControl>
-                  <FormLabel>Adaugă o imagine:</FormLabel>
-                  <Input
-                    w={['300px', '500px']}
-                    name={'file'}
-                    accept={'image/*'}
-                    type={'file'}
-                    onChange={uploadCloudHandler}
-                  />
-                </FormControl>
-                {postImage && (
-                  <FormControl>
-                    <Image
-                      w={'500px'}
-                      h={'300px'}
-                      src={`${postImage}`}
-                      objectFit={'contain'}
-                      alt={'Imagine facebook postare'}
-                    />
-                  </FormControl>
+                <HStack alignItems={'flex-start'}>
+                  <>
+                    <Text>Bună, {name}</Text>
+                    <Avatar src={userProfilePic} />
+                  </>
+
+                  <Divider orientation="vertical" />
+                </HStack>
+
+                <Accordion w={['500px']} allowMultiple>
+                  <AccordionItem>
+                    <AccordionButton>
+                      Alege pe ce pagini să postezi <AccordionIcon />
+                    </AccordionButton>
+                    <AccordionPanel pb={4}>
+                      <Stack alignItems={'flex-start'}>
+                        <Button
+                          variant={'ghost'}
+                          _hover={'none'}
+                          _active={'none'}
+                          onClick={addAllPages}
+                        >
+                          Selectează primele 50
+                        </Button>
+                        <Divider />
+                        <Stack gap={'1rem'} alignItems={'flex-start'}>
+                          {pages.map((page) => (
+                            <Button
+                              key={page.id}
+                              variant={'ghost'}
+                              onClick={() => {
+                                addPage(page);
+                              }}
+                            >
+                              <Avatar name={page.name} />
+                              <Text>{page.name}</Text>
+                            </Button>
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
+
+                {selectedPages.length !== 0 && (
+                  <HStack w={['500px']} flexWrap={'wrap'}>
+                    {selectedPages.map((page) => (
+                      <Stack key={page.id}>
+                        {pagesProfilePicture.map((profile) => (
+                          <Avatar name={page.name} src={profile} />
+                        ))}
+
+                        <DeleteIcon
+                          color={'facebook.500'}
+                          onClick={() => deselectPage(page.id)}
+                        />
+                      </Stack>
+                    ))}
+                  </HStack>
                 )}
-                <FormControl>
-                  <FormLabel>Introdu link-ul:</FormLabel>
-                  <Input
-                    type={'text'}
-                    w={['300px', '500px']}
-                    value={postLink}
-                    onChange={(e) => setPostLink(e.target.value)}
-                  />
-                </FormControl>
+
+                <>
+                  <Accordion w={['500px']} allowMultiple>
+                    <AccordionItem>
+                      <AccordionButton>
+                        Alege pe ce grupuri să postezi <AccordionIcon />
+                      </AccordionButton>
+                      <AccordionPanel pb={4}>
+                        <Stack alignItems={'flex-start'}>
+                          <Button
+                            variant={'ghost'}
+                            _hover={'none'}
+                            _active={'none'}
+                            onClick={addAllGroups}
+                          >
+                            Selectează primele 50
+                          </Button>
+                          <Divider />
+                          <Stack gap={'1rem'} alignItems={'flex-start'}>
+                            {userGroups.map((page) => (
+                              <Button
+                                key={page.id}
+                                variant={'ghost'}
+                                onClick={() => {
+                                  addGroup(page);
+                                }}
+                              >
+                                <Avatar name={page.name} />
+                                <Text>{page.name}</Text>
+                              </Button>
+                            ))}
+                          </Stack>
+                        </Stack>
+                      </AccordionPanel>
+                    </AccordionItem>
+                  </Accordion>
+                  {selectedGroups.length !== 0 && (
+                    <HStack w={['500px']} flexWrap={'wrap'}>
+                      {selectedGroups.map((page) => (
+                        <Stack key={page.id}>
+                          <Avatar src={page.picture} />
+
+                          <DeleteIcon
+                            color={'facebook.500'}
+                            onClick={() => deselectGroup(page.id)}
+                          />
+                        </Stack>
+                      ))}
+                    </HStack>
+                  )}
+                </>
+
+                <form>
+                  <Stack>
+                    <Textarea
+                      value={postText}
+                      placeholder={'Introdu textul pentru postare'}
+                      rows={8}
+                      disabled={isPublishing}
+                      onChange={(e) => setPostText(e.target.value)}
+                    />
+                    <FormControl>
+                      <FormLabel>Adaugă o imagine:</FormLabel>
+                      <Input
+                        w={['300px', '500px']}
+                        name={'file'}
+                        accept={'image/*'}
+                        type={'file'}
+                        onChange={uploadCloudHandler}
+                      />
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel>Introdu link-ul:</FormLabel>
+                      <Input
+                        type={'text'}
+                        w={['300px', '500px']}
+                        value={postLink}
+                        onChange={(e) => setPostLink(e.target.value)}
+                      />
+                    </FormControl>
+                  </Stack>
+                </form>
               </Stack>
-            </form>
-          </Stack>
-          <HStack>
-            <Button
-              w={'fit-content'}
-              onClick={sendPostToPage}
-              isDisabled={
-                !postText ||
-                isPublishing ||
-                selectedPages.length === 0 ||
-                selectedGroups.length > 0
-              }
+              <HStack>
+                <Button
+                  w={'fit-content'}
+                  onClick={sendPostToPage}
+                  isDisabled={
+                    !postText ||
+                    isPublishing ||
+                    selectedPages.length === 0 ||
+                    selectedGroups.length > 0
+                  }
+                >
+                  Postează pe pagini
+                </Button>
+                <Button
+                  w={'fit-content'}
+                  onClick={schedulePost}
+                  isDisabled={
+                    !postText ||
+                    isPublishing ||
+                    selectedPages.length === 0 ||
+                    selectedGroups.length > 0
+                  }
+                >
+                  Programează pe pagini
+                </Button>
+              </HStack>
+              <Button
+                w={'fit-content'}
+                onClick={sendPostToGroup}
+                isDisabled={
+                  !postText ||
+                  isPublishing ||
+                  selectedGroups.length === 0 ||
+                  selectedPages.length > 0
+                }
+              >
+                Postează pe grupuri
+              </Button>
+            </Stack>
+            <Stack
+              border={'1px solid rgba(202, 202, 202,0.8)'}
+              gap={'1rem'}
+              px={'3rem'}
+              py={'2rem'}
+              justifyContent={'center'}
+              alignItems={'center'}
+              w={{ base: '350px', md: '600px' }}
             >
-              Postează pe pagini
-            </Button>
-            <Button
-              w={'fit-content'}
-              onClick={schedulePost}
-              isDisabled={
-                !postText ||
-                isPublishing ||
-                selectedPages.length === 0 ||
-                selectedGroups.length > 0
-              }
-            >
-              Programează pe pagini
-            </Button>
+              <HStack gap={'1rem'}>
+                <Avatar size={'md'} name="Auto Post" />{' '}
+                <Heading as={'h2'}>Denumirea paginii</Heading>
+              </HStack>
+              <Stack w={'full'}>
+                <Text>{postText}</Text>
+              </Stack>
+              {postImage && (
+                <Stack
+                  w={{ base: '350px', md: '600px' }}
+                  alignItems={'center'}
+                  justifyContent={'flex-start'}
+                >
+                  <Image
+                    w={{ base: '350px', md: '400px' }}
+                    objectFit={'cover'}
+                    src={`${postImage}`}
+                    alt={'AutoPost - Facebook Post Image Preview'}
+                  />
+                </Stack>
+              )}
+            </Stack>
           </HStack>
-          <Button
-            w={'fit-content'}
-            onClick={sendPostToGroup}
-            isDisabled={
-              !postText ||
-              isPublishing ||
-              selectedGroups.length === 0 ||
-              selectedPages.length > 0
-            }
-          >
-            Postează pe grupuri
-          </Button>
         </>
-      ) : (
-        <Button
-          _hover={'none'}
-          _active={'none'}
-          bg={'facebook.500'}
-          borderRadius={'1rem'}
-          color={'#fff'}
-          fontWeight={'bold'}
-          p={'1rem 1.5rem'}
-          onClick={logInToFB}
-        >
-          Conectare Facebook
-        </Button>
-      )}
+      ) : null}
     </Stack>
   );
 };

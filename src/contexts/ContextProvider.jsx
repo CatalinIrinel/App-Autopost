@@ -6,6 +6,13 @@ const initialState = {
   userInfo: localStorage.getItem('userInfo')
     ? JSON.parse(localStorage.getItem('userInfo'))
     : null,
+  fbAccess: localStorage.getItem('fbAccess')
+    ? JSON.parse(localStorage.getItem('fbAccess'))
+    : null,
+  fbUserId: localStorage.getItem('fbUserId')
+    ? JSON.parse(localStorage.getItem('fbUserId'))
+    : null,
+
   cart: {
     paymentMethod: localStorage.getItem('paymentMethod')
       ? localStorage.getItem('paymentMethod')

@@ -6,3 +6,4 @@ export { default as Workflow } from './Workflow';
 export { default as Comments } from './Comments';
 export { default as Scheduler } from './Scheduler';
 export { default as Statistics } from './Statistics';
+export { default as LoginPage } from './Logare';

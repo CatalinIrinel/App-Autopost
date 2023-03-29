@@ -5,6 +5,7 @@ import FacebookPosts from './pages/FacebookPosts';
 import {
   Comments,
   Home,
+  LoginPage,
   InstagramPosts,
   Kanban,
   Scheduler,
@@ -21,6 +22,7 @@ function App() {
   const toggle = () => {
     setIsOpen((prev) => !prev);
   };
+
   return (
     <Router>
       <Navbar toggle={toggle} />
@@ -28,6 +30,7 @@ function App() {
       <Stack w={'full'} justifyContent={'center'} alignItems={'center'}>
         <Routes>
           <Route path={'/'} element={<Home />} />
+          <Route path={'/logare'} element={<LoginPage />} />
           <Route path={'/workflow'} element={<Workflow />} />
           <Route path={'/comments'} element={<Comments />} />
           <Route path={'/instagram'} element={<InstagramPosts />} />

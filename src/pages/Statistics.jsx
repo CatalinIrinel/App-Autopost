@@ -7,9 +7,17 @@ import {
   FaTiktok,
   FaYoutube,
 } from 'react-icons/fa';
+
 const Statistics = () => {
   return (
-    <Flex w={'full'} h={'100vh'}>
+    <Flex
+      w={'full'}
+      minH={'100vh'}
+      alignItems={'center'}
+      justifyContent={'center'}
+      flexDir={'column'}
+      gap={'3rem'}
+    >
       <Heading as={'h1'}> Statistics area </Heading>
       <Stack w={'full'} maxW={'90rem'} gap={'3rem'} pb={'2rem'} color={''}>
         {[
