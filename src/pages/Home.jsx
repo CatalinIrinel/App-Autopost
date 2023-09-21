@@ -6,97 +6,129 @@ import {
   Button,
   Divider,
   Box,
+  Link,
 } from '@chakra-ui/react';
-// import axios from 'axios';
+import axios from 'axios';
 import React, { useContext, useEffect, useState } from 'react';
 import {
   FaFacebook,
-  // FaTwitter,
+  FaPinterestP,
   FaInstagram,
-  // FaTiktok,
-  // FaYoutube,
-  // FaLinkedinIn,
+  FaTiktok,
+  FaYoutube,
+  FaLinkedinIn,
 } from 'react-icons/fa';
-// import { toast } from 'react-toastify';
-// import { Store } from '../contexts/ContextProvider';
+import { toast } from 'react-toastify';
 import { useInitFbSDK } from '../hooks/fbHooks';
+import { Store } from '../contexts/ContextProvider';
 
 const Home = () => {
-  // const { state } = useContext(Store);
-  // const { userInfo } = state;
-
   // user data
-  const [name, setName] = useState();
-  const [userId, setUserId] = useState();
-  // const [userProfilePic, setUserProfilePic] = useState();
-  // const [userGroups, setUserGroups] = useState([]);
-
-  // pages data
-  // const [pages, setPages] = useState([]);
-  // const [pagesProfilePicture, setPagesProfilePicture] = useState([]);
-  // const [selectedPages, setSelectedPages] = useState([]);
   const [fbUserAccessToken, setFbUserAccessToken] = useState();
+  const { state } = useContext(Store);
+  const { userInfo } = state;
+  const [pageToken, setPageToken] = useState('');
 
   const isFbSDKInitialized = useInitFbSDK();
+  // const apiLink = 'https://localhost:5000';
+  // const scopes =
+  //   'public_profile, Page Mentions, pages_manage_posts, pages_read_engagement,publish_to_groups, instagram_basic, instagram_content_publish, pages_show_list,pages_manage_engagement,publish_video';
+
+  // Checks if the user is logged in to Facebook
+
   useEffect(() => {
     if (isFbSDKInitialized) {
       window.FB.getLoginStatus((response) => {
         setFbUserAccessToken(response.authResponse?.accessToken);
+        // console.log(response.status);
       });
     }
   }, [fbUserAccessToken, isFbSDKInitialized]);
 
-  const logInToInsta = React.useCallback(() => {
-    console.log('It works for insta');
-  }, []);
   // login to fb
-  const logInToFB = React.useCallback(() => {
+
+  const logInToFB = React.useCallback(async () => {
     window.FB.login(
       (response) => {
         if (response.status === 'connected') {
           setFbUserAccessToken(response.authResponse.accessToken);
+          toast.success('Te-ai logat cu succes pe Facebook');
         } else {
+          toast.error('Logarea a esuat');
           throw new Error();
         }
       },
       {
-        scope:
-          'pages_show_list, pages_manage_ads, pages_manage_posts, pages_manage_metadata, pages_manage_engagement, pages_read_engagement, public_profile, ads_management, publish_video, leads_retrieval,  publish_to_groups, instagram_basic, instagram_content_publish, instagram_manage_comments ',
+        scope: `public_profile,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,pages_show_list,publish_to_groups,pages_manage_engagement,publish_video`,
       }
     );
   }, []);
 
+  const logInToInsta = () => {
+    try {
+      toast.success('Insta logat cu succes');
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const logInToTikTok = () => {
+    try {
+      toast.success('Tiktok logat cu succes');
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const logInToLinkedin = () => {
+    try {
+      toast.success('Linkedin logat cu succes');
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const logInToYoutube = () => {
+    try {
+      toast.success('Youtube logat cu succes');
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  const logInToPint = () => {
+    try {
+      toast.success('Pinterest logat cu succes');
+    } catch (error) {
+      toast.error(error);
+    }
+  };
   // logout of facebook
   const logOutOfFB = React.useCallback(() => {
     window.FB.logout(() => {
       setFbUserAccessToken(null);
-      // setFbPageAccessToken(null);
-      localStorage.removeItem('fbAccess');
-      localStorage.removeItem('fbUserId');
-      localStorage.removeItem('fbUserAccess');
     });
   }, []);
 
-  // Checks if the user is logged in to Facebook
-  useEffect(() => {
-    if (isFbSDKInitialized) {
-      window.FB.getLoginStatus((response) => {
-        setFbUserAccessToken(response.authResponse?.accessToken);
-      });
-    }
-  }, [fbUserAccessToken, isFbSDKInitialized]);
-
-  // Fetches an access token for the pages
+  // // Fetches an access token for the pages
   useEffect(() => {
     if (fbUserAccessToken) {
-      window.FB.api('/me', (response) => {
-        setName(response.name);
-        setUserId(response.id); //userid for access
-      });
-      localStorage.setItem('fbUserId', JSON.stringify(userId));
-      localStorage.setItem('fbAccess', JSON.stringify(fbUserAccessToken));
+      try {
+        window.FB.api('/me', async (response) => {
+          setPageToken(response.id);
+          await axios.put(
+            'http://localhost:5000/api/facebook/addAccessToken',
+            { pageToken },
+            { headers: { authorization: `Bearer ${userInfo.token}` } }
+          ); //userid for access
+        });
+        // console.log('Page Token:');
+        // console.log(pageToken);
+      } catch (error) {
+        toast.error(`Sa ma bata mama: ${error}`);
+      }
     }
-  }, [fbUserAccessToken, userId]);
+  }, [fbUserAccessToken, pageToken, userInfo.token]);
 
   return (
     <Stack
@@ -110,7 +142,7 @@ const Home = () => {
       </Heading>
       <Stack w={'full'} maxW={'90rem'} gap={'3rem'} pb={'2rem'} color={''}>
         <Heading as={'h2'} textAlign={'center'}>
-          Conecteaza conturile pe care doresti sa le gestionezi
+          Conectează conturile pe care dorești să le gestionezi
         </Heading>
         <HStack
           w={'full'}
@@ -164,53 +196,55 @@ const Home = () => {
             // disabled={userInfo.instagramData}
           >
             <Icon as={FaInstagram} fontSize={'1.5rem'} />
-            &nbsp;Instagram Login
+            &nbsp;Login with Instagram
           </Button>
-          {/* <Button
+          <Button
             w={'250px'}
             h={'50px'}
-            onClick={fbLoginHandler}
-            _hover={{ bg: 'twitter.700' }}
+            onClick={logInToPint}
+            _hover={{ bg: '#b1001b' }}
             _active={'none'}
-            bg={'twitter.500'}
+            bg={'#E60023'}
             color={'#fff'}
             display={'flex'}
             justifyContent={'center'}
             alignItems={'center'}
             // disabled={userInfo.twitterData}
           >
-            <Icon as={FaTwitter} fontSize={'1.5rem'} />
-            &nbsp;Twitter Login
-          </Button> */}
+            <Icon as={FaPinterestP} fontSize={'1.5rem'} />
+            &nbsp;Login with Pinterest
+          </Button>
         </HStack>
         <Divider borderWidth={'medium'} borderColor={'#000'} />
-        {/* <HStack
+        <HStack
           w={'full'}
           gap={'2rem'}
           justifyContent={'center'}
           alignItems={'center'}
           flexWrap={'wrap'}
         >
+          <Link href={'https://api.autopost.ro/api/tiktok/oauth'}>
+            <Button
+              w={'250px'}
+              h={'50px'}
+              onClick={logInToTikTok}
+              _hover={{ bg: '#383838' }}
+              _active={'none'}
+              bg={'#000'}
+              color={'#fff'}
+              display={'flex'}
+              justifyContent={'center'}
+              alignItems={'center'}
+              // disabled={userInfo.tiktokData}
+            >
+              <Icon as={FaTiktok} fontSize={'1.5rem'} />
+              &nbsp;Login with Tiktok
+            </Button>
+          </Link>
           <Button
             w={'250px'}
             h={'50px'}
-            onClick={fbLoginHandler}
-            _hover={{ bg: '#000' }}
-            _active={'none'}
-            bg={'#383838'}
-            color={'#fff'}
-            display={'flex'}
-            justifyContent={'center'}
-            alignItems={'center'}
-            // disabled={userInfo.tiktokData}
-          >
-            <Icon as={FaTiktok} fontSize={'1.5rem'} />
-            &nbsp;Tiktok Login
-          </Button>
-          <Button
-            w={'250px'}
-            h={'50px'}
-            onClick={fbLoginHandler}
+            onClick={logInToLinkedin}
             _hover={{ bg: 'linkedin.700' }}
             _active={'none'}
             bg={'linkedin.500'}
@@ -221,12 +255,12 @@ const Home = () => {
             // disabled={userInfo.linkedinData}
           >
             <Icon as={FaLinkedinIn} fontSize={'1.5rem'} />
-            &nbsp;LinkedIn Login
+            &nbsp;Login with LinkedIn
           </Button>
           <Button
             w={'250px'}
             h={'50px'}
-            onClick={fbLoginHandler}
+            onClick={logInToYoutube}
             _hover={{ bg: 'red.700' }}
             _active={'none'}
             bg={'red.500'}
@@ -237,9 +271,9 @@ const Home = () => {
             // disabled={userInfo.youtubeData}
           >
             <Icon as={FaYoutube} fontSize={'1.5rem'} />
-            &nbsp;Youtube Login
+            &nbsp;Login with Youtube
           </Button>
-        </HStack> */}
+        </HStack>
       </Stack>
     </Stack>
   );

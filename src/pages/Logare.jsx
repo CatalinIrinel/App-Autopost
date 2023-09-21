@@ -8,13 +8,14 @@ import {
   Input,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Store } from '../contexts/ContextProvider';
 import { getError } from '../Utils';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -30,17 +31,17 @@ const LoginPage = () => {
       });
       ctxDispatch({ type: 'USER_SIGNIN', payload: data });
       localStorage.setItem('userInfo', JSON.stringify(data));
-      // window.location.href = 'https://app.autopost.ro/';
+      navigate('/');
     } catch (err) {
       toast.error(getError(err));
     }
   };
 
-  // useEffect(() => {
-  //   if (userInfo) {
-  //     window.location.href = 'https://app.autopost.ro/';
-  //   }
-  // }, [userInfo]);
+  useEffect(() => {
+    if (userInfo) {
+      navigate('/');
+    }
+  }, [navigate, userInfo]);
   return (
     <Flex
       w={'full'}

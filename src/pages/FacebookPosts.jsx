@@ -5,7 +5,6 @@ import {
   AccordionItem,
   AccordionPanel,
   Avatar,
-  Box,
   Button,
   Divider,
   FormControl,
@@ -20,7 +19,6 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import React, { useContext, useEffect, useReducer, useState } from 'react';
-import { useInitFbSDK } from '../hooks/fbHooks';
 import { getError } from '../Utils';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -45,18 +43,13 @@ const reducer = (state, action) => {
 
 const FacebookPosts = () => {
   const { state } = useContext(Store);
-  const { userInfo, fbAccess, fbUserId } = state;
+  const { userInfo } = state;
+  const [pageToken, setPageToken] = useState('');
 
   const [{ error, loadingUpdate }, dispatch] = useReducer(reducer, {
     loading: true,
     error: '',
   });
-
-  // scopes pentru permisiuni pe fb
-  // public_profile,ads_management, instagram_basic, publish_video, leads_retrieval, pages_manage_engagement, publish_to_groups, pages_manage_ads, pages_show_list, Page Public Metadata Access, Oembed Read, Page Public Content Access
-
-  // facebook sdk async
-  const isFbSDKInitialized = useInitFbSDK();
 
   // posts data
   const [postText, setPostText] = useState('');
@@ -66,31 +59,39 @@ const FacebookPosts = () => {
   const [isPublishing, setIsPublishing] = useState(false);
 
   // user data
-  const [name, setName] = useState();
+  const [name, setName] = useState('');
   const [userProfilePic, setUserProfilePic] = useState();
   const [userGroups, setUserGroups] = useState([]);
 
   // pages data
   const [pages, setPages] = useState([]);
-  const [pagesProfilePicture, setPagesProfilePicture] = useState([]);
+  // const [pagesProfilePicture, setPagesProfilePicture] = useState([]);
   const [selectedPages, setSelectedPages] = useState([]);
 
   //pages group
   // const [pageGroups, setPageGroups] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
-
-  // Checks if the user is logged in to Facebook
+  useEffect(() => {
+    const fetchToken = async () => {
+      const result = await axios.get(
+        'http://localhost:5000/api/facebook/getAccessToken',
+        { headers: { authorization: `Bearer ${userInfo.token}` } }
+      );
+      setPageToken(result.data);
+    };
+    fetchToken();
+  });
 
   //Fetches users fb pages, profile picture and user groups
   useEffect(() => {
-    if (fbUserId) {
-      window.FB.api(`/${fbUserId}/accounts`, (response) => {
+    if (pageToken) {
+      window.FB.api(`/${pageToken}/accounts`, (response) => {
         if (response && !response.error) {
           setPages(response.data);
         }
       });
       window.FB.api(
-        `/${fbUserId}/picture`,
+        `/${pageToken}/picture`,
         {
           redirect: false,
           type: 'small',
@@ -101,13 +102,13 @@ const FacebookPosts = () => {
           }
         }
       );
-      window.FB.api(`/${fbUserId}/groups`, (response) => {
+      window.FB.api(`/${pageToken}/groups`, (response) => {
         if (response && !response.error) {
           setUserGroups(response.data);
         }
       });
     }
-  }, [fbUserId]);
+  }, [pageToken]);
 
   // Publishes a post on the Facebook pages
 
@@ -147,49 +148,9 @@ const FacebookPosts = () => {
         )
       );
     }
+    setPostImage('');
+    toast.success('Postarea a fost creata cu succes');
   }, [postImage, selectedPages, postText, postLink]);
-
-  const schedulePost = React.useCallback(() => {
-    setIsPublishing(true);
-
-    if (postImage) {
-      selectedPages.forEach((page) =>
-        window.FB.api(
-          `/${page.id}/photos`,
-          'POST',
-          {
-            message: postText,
-            access_token: page.access_token,
-            url: postImage,
-            published: false,
-            scheduled_publish_time: schedulePost,
-          },
-          () => {
-            setPostText('');
-            setIsPublishing(false);
-          }
-        )
-      );
-    } else {
-      selectedPages.forEach((page) =>
-        window.FB.api(
-          `/${page.id}/feed`,
-          'POST',
-          {
-            message: postText,
-            access_token: page.access_token,
-            link: postLink || '',
-            published: false,
-            scheduled_publish_time: schedulePost,
-          },
-          () => {
-            setPostText('');
-            setIsPublishing(false);
-          }
-        )
-      );
-    }
-  }, [postImage, postLink, postText, selectedPages]);
 
   // Publishes a post on the Facebook groups
   const sendPostToGroup = React.useCallback(async () => {
@@ -226,6 +187,8 @@ const FacebookPosts = () => {
         )
       );
     }
+    setPostImage('');
+    toast.success('Postarea a fost creata cu succes');
   }, [postImage, postLink, postText, selectedGroups]);
 
   // const Link = 'https://api.autopost.ro';
@@ -308,13 +271,14 @@ const FacebookPosts = () => {
       if (!duplicate) {
         setSelectedGroups([...selectedGroups, group]);
       } else {
-        toast.error('Pagina este deja aleasă');
+        toast.error('Grupul este deja aleas');
       }
     } else {
       toast.info('Poți selecta maxim 50 de grupuri');
     }
   };
-
+  // Console log area
+  // console.log(pages);
   return (
     <Stack
       w={'full'}
@@ -326,7 +290,7 @@ const FacebookPosts = () => {
         Posteaza pe Facebook
       </Heading>
 
-      {!loadingUpdate && !error && fbAccess ? (
+      {!loadingUpdate && !error ? (
         <>
           <HStack alignItems={'flex-start'} gap={'5rem'}>
             <Stack>
@@ -379,10 +343,12 @@ const FacebookPosts = () => {
                   <HStack w={['500px']} flexWrap={'wrap'}>
                     {selectedPages.map((page) => (
                       <Stack key={page.id}>
-                        {pagesProfilePicture.map((profile) => (
+                        {/* {pagesProfilePicture.map((profile) => (
                           <Avatar name={page.name} src={profile} />
-                        ))}
-
+                        ))} */}
+                        <Text fontSize={'.8rem'} w={'20ch'}>
+                          {page.name}
+                        </Text>
                         <DeleteIcon
                           color={'facebook.500'}
                           onClick={() => deselectPage(page.id)}
@@ -487,18 +453,6 @@ const FacebookPosts = () => {
                   }
                 >
                   Postează pe pagini
-                </Button>
-                <Button
-                  w={'fit-content'}
-                  onClick={schedulePost}
-                  isDisabled={
-                    !postText ||
-                    isPublishing ||
-                    selectedPages.length === 0 ||
-                    selectedGroups.length > 0
-                  }
-                >
-                  Programează pe pagini
                 </Button>
               </HStack>
               <Button

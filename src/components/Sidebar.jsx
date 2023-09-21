@@ -61,10 +61,9 @@ const Sidebar = ({ toggle, isOpen }) => {
           textDecoration={'underline'}
           fontSize={'1rem'}
         >
-          Panou de control
-        </ListItem>
-        <ListItem>
-          <Link to="/">Acasa</Link>
+          <Link to="/" onClick={toggle}>
+            Conecteaza profilele
+          </Link>
         </ListItem>
       </UnorderedList>
       <UnorderedList
@@ -86,15 +85,15 @@ const Sidebar = ({ toggle, isOpen }) => {
         {[
           { text: 'facebook', link: '/facebook' },
           { text: 'instagram', link: '/instagram' },
-          { text: 'twitter', link: '/twitter' },
           { text: 'tiktok', link: '/tiktok' },
+          { text: 'pinterest', link: '/pinterest' },
           { text: 'linkedIn', link: '/linkedin' },
           { text: 'Youtube', link: '/youtube' },
-          { text: 'linkedIn', link: 'linkedin' },
-          { text: 'linkedIn', link: 'linkedin' },
         ].map((item, index) => (
           <ListItem textTransform={'capitalize'} key={index}>
-            <Link to={`${item.link}`}>{item.text}</Link>
+            <Link onClick={toggle} to={`${item.link}`}>
+              {item.text}
+            </Link>
           </ListItem>
         ))}
       </UnorderedList>
@@ -115,17 +114,19 @@ const Sidebar = ({ toggle, isOpen }) => {
           Apps
         </ListItem>
         {[
+          { text: 'Programeaza postari', link: 'scheduler' },
           { text: 'workflow', link: 'workflow' },
-          { text: 'programari', link: 'scheduler' },
-          { text: 'comentarii', link: 'comments' },
+          { text: 'calendar', link: 'scheduler' },
         ].map((item, index) => (
           <ListItem textTransform={'capitalize'} key={index}>
-            <Link to={`/${item.link}`}>{item.text}</Link>
+            <Link onClick={toggle} to={`/${item.link}`}>
+              {item.text}
+            </Link>
           </ListItem>
         ))}
       </UnorderedList>
 
-      <UnorderedList
+      {/* <UnorderedList
         m={0}
         listStyleType={'none'}
         display={'flex'}
@@ -147,10 +148,12 @@ const Sidebar = ({ toggle, isOpen }) => {
           { text: 'tiktok', link: 'statistics/tiktok' },
         ].map((item, index) => (
           <ListItem textTransform={'capitalize'} key={index}>
-            <Link to={`/${item.link}`}>{item.text}</Link>
+            <Link onClick={toggle} to={`/${item.link}`}>
+              {item.text}
+            </Link>
           </ListItem>
         ))}
-      </UnorderedList>
+      </UnorderedList> */}
     </Box>
   );
 };
